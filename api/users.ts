@@ -16,8 +16,8 @@ function authHeaders() {
 
 export async function createUser(payload: {
     fullName: string;
-    email: string;
-    phoneNumber?: string;
+    email?: string | null;
+    phoneNumber?: string | null;
     password: string;
     userRole: string;
     department: string;
@@ -56,8 +56,8 @@ export async function updateUser(
   userId: string,
   payload: {
     fullName?: string;
-    email?: string;
-    phoneNumber?: string;
+    email?: string | null;
+    phoneNumber?: string | null;
     userRole?: string;
     department?: string;
     password?: string;

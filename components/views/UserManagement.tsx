@@ -204,26 +204,27 @@ const fetchUsers = async () => {
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      !formData.name ||
-      !formData.email ||
-      (!editingUser && !formData.password)
-    ) {
+    const hasEmail = Boolean(formData.email?.trim());
+    const hasPhone = Boolean(formData.phoneNumber?.trim());
+
+    if (!formData.name?.trim() || (!editingUser && !formData.password)) {
       alert("Please fill in all required fields.");
+      return;
+    }
+
+    if (!hasEmail && !hasPhone) {
+      alert("Provide an email address and/or phone number.");
       return;
     }
 
     try {
       if (editingUser) {
-        const payload: Record<string, string> = {
+        const payload: Record<string, string | null> = {
           fullName: formData.name,
-          email: formData.email,
+          email: hasEmail ? formData.email.trim() : null,
+          phoneNumber: hasPhone ? formData.phoneNumber.trim() : null,
           userRole: formData.role,
         };
-
-        if (formData.phoneNumber) {
-          payload.phoneNumber = formData.phoneNumber;
-        }
 
         const department = formData.department.trim().toUpperCase();
         if (department && department !== "—") {
@@ -232,13 +233,13 @@ const fetchUsers = async () => {
 
         await updateUser(editingUser.id, payload);
       } else {
-        const created = await createUser({
+        await createUser({
           fullName: formData.name,
-          email: formData.email,
+          email: hasEmail ? formData.email.trim() : null,
           password: formData.password,
           userRole: formData.role,
           department: formData.department.trim().toUpperCase(),
-          phoneNumber: formData.phoneNumber || undefined,
+          phoneNumber: hasPhone ? formData.phoneNumber.trim() : null,
         });
       }
 
@@ -624,9 +625,11 @@ const fetchUsers = async () => {
                     }
                     placeholder="email@example.com"
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary outline-none"
-                    required
                   />
                 </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Provide email and/or phone number.
+                </p>
               </div>
 
               <div>
@@ -646,7 +649,6 @@ const fetchUsers = async () => {
                     }
                     placeholder="123-456-7890"
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary outline-none"
-                    required
                   />
                 </div>
               </div>

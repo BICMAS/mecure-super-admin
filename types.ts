@@ -1,7 +1,20 @@
 
 export type UserRole = 'SUPER_ADMIN' | 'HR_MANAGER' | 'LEARNER';
 
-export type UserDepartment = 'HR' | 'SALES' | 'MARKETING' | 'ENGINEERING' | 'FINANCE' | 'OPERATIONS' | 'CUSTOMER_SUPPORT';
+export type UserDepartment =
+  | 'HR'
+  | 'SALES'
+  | 'FIELD_SALES_REF'
+  | 'FIELD_TEAM_MANAGER'
+  | 'MEDICAL_REP'
+  | 'MEDICAL_REP_PHARMACIST'
+  | 'MARKETING'
+  | 'FINANCE'
+  | 'OPERATIONS'
+  | 'IT'
+  | 'CUSTOMER_SUPPORT'
+  | 'LEGAL'
+  | 'ADMINISTRATION';
 
 export interface User {
   id: string;
