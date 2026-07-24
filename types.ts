@@ -4,10 +4,6 @@ export type UserRole = 'SUPER_ADMIN' | 'HR_MANAGER' | 'LEARNER';
 export type UserDepartment =
   | 'HR'
   | 'SALES'
-  | 'FIELD_SALES_REF'
-  | 'FIELD_TEAM_MANAGER'
-  | 'MEDICAL_REP'
-  | 'MEDICAL_REP_PHARMACIST'
   | 'MARKETING'
   | 'FINANCE'
   | 'OPERATIONS'
@@ -23,6 +19,7 @@ export interface User {
   phoneNumber?: string;
   role: UserRole;
   department: string;
+  designation?: string;
   status: 'Active' | 'Inactive' | 'Blocked';
   lastLogin: string;
 }

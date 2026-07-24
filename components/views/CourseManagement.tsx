@@ -314,12 +314,14 @@ const CourseManagement: React.FC = () => {
     try {
       setUploadingImage(true);
       const previewUrl = URL.createObjectURL(file);
+      setCourseImagePreview(previewUrl);
 
       const response = await uploadCourseImage(activeCourse.id, file);
 
-      if (response?.url) {
-        updateCourseField("imageUrl", response.url);
-        setCourseImagePreview(response.url);
+      if (response?.imageUrl) {
+        updateCourseField("imageUrl", response.imageUrl);
+        setCourseImagePreview(response.imageUrl);
+        URL.revokeObjectURL(previewUrl);
       }
     } catch (err) {
       console.error(err);

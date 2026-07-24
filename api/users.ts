@@ -21,6 +21,7 @@ export async function createUser(payload: {
     password: string;
     userRole: string;
     department: string;
+    designation?: string | null;
 }): Promise<User> {
     const res = await fetch(`${BASE_URL}/users/`, {
         method: 'POST',
@@ -60,6 +61,7 @@ export async function updateUser(
     phoneNumber?: string | null;
     userRole?: string;
     department?: string;
+    designation?: string | null;
     password?: string;
     status?: string;
   }
