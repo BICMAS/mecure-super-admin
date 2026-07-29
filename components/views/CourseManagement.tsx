@@ -100,7 +100,33 @@ const CourseManagement: React.FC = () => {
     version: course.version || "",
     visibility: course.visibility || "INTERNAL",
     tags: Array.isArray(course.tags) ? course.tags : [],
-    modules: Array.isArray(course.modules) ? course.modules : [],
+    modules: (Array.isArray(course.modules) ? course.modules : []).map(
+      (module, moduleIndex) => ({
+        ...module,
+        sortOrder: (module as any).sortOrder ?? moduleIndex,
+        lessons: (module.lessons ?? []).map((lesson) => {
+          const pkg = (lesson as any).scormPackage;
+          const existingContent = lesson.content;
+          return {
+            ...lesson,
+            content:
+              existingContent ??
+              (pkg
+                ? {
+                    id: pkg.id,
+                    fileName: pkg.filename,
+                    uploadDate: pkg.uploadedAt?.split?.("T")?.[0] ?? "",
+                    size: pkg.packageSize
+                      ? `${(pkg.packageSize / (1024 * 1024)).toFixed(2)} MB`
+                      : "",
+                    storagePath: pkg.storagePath,
+                    scormVersion: pkg.scormVersion,
+                  }
+                : undefined),
+          };
+        }),
+      }),
+    ),
     imageUrl: course.imageUrl || undefined,
     passingScore: (course as any).passingScore ?? 70,
     requireQuizPass: (course as any).requireQuizPass ?? true,
@@ -177,12 +203,28 @@ const CourseManagement: React.FC = () => {
     }
   };
 
-  const uploadScormPackage = async (file: File) => {
+  const uploadScormPackage = async (
+    file: File,
+    options?: {
+      courseId?: string;
+      lessonId?: string;
+      existingPackageId?: string | null;
+    },
+  ) => {
     const token = localStorage.getItem("accessToken");
     if (!token) throw new Error("No access token found");
 
     const formData = new FormData();
     formData.append("package", file);
+    if (options?.courseId) {
+      formData.append("courseId", options.courseId);
+    }
+    if (options?.lessonId) {
+      formData.append("lessonId", options.lessonId);
+    }
+    if (options?.existingPackageId) {
+      formData.append("existingPackageId", options.existingPackageId);
+    }
 
     const res = await fetch(
       `${API_BASE}/scorm-packages`,
@@ -260,14 +302,20 @@ const CourseManagement: React.FC = () => {
       modulePacingDays: (course as any).modulePacingDays ?? 7,
       pacingStartDate: (course as any).pacingStartDate ?? null,
       scormPackageId: (course as any).scormPackageId ?? null,
-      modules: (course.modules ?? []).map((module) => ({
+      modules: (course.modules ?? []).map((module, index) => ({
         id: module.id,
         name: module.name || "Untitled Module",
+        sortOrder: (module as any).sortOrder ?? index,
         lessons: module.lessons.map((lesson) => ({
           id: lesson.id,
           title: lesson.title,
           description: lesson.description || "",
-          scormPackageId: lesson.content?.id ?? null,
+          scormPackageId:
+            lesson.content?.id ??
+            ((course as any).modulePacingEnabled
+              ? (course as any).scormPackageId
+              : null) ??
+            null,
         })),
       })),
     };
@@ -521,12 +569,32 @@ const CourseManagement: React.FC = () => {
   };
 
   const confirmUpload = async () => {
-    if (!uploadModal.file) return;
+    if (!uploadModal.file || !activeCourse) return;
 
     try {
       setUploadingScorm(true);
-      const scorm = await uploadScormPackage(uploadModal.file);
-      console.log("SCORM API response:", scorm); // 👈 raw payload
+
+      const module = activeCourse.modules?.find(
+        (m) => m.id === uploadModal.moduleId,
+      );
+      const lesson = module?.lessons.find((l) => l.id === uploadModal.lessonId);
+      const existingPackageId =
+        lesson?.content?.id ??
+        (activeCourse as any).scormPackageId ??
+        null;
+
+      const persistedLessonId = /^c[a-z0-9]{24}$/i.test(uploadModal.lessonId)
+        ? uploadModal.lessonId
+        : null;
+
+      const scorm = await uploadScormPackage(uploadModal.file, {
+        courseId: activeCourse.id,
+        lessonId: (activeCourse as any).modulePacingEnabled
+          ? undefined
+          : persistedLessonId ?? undefined,
+        existingPackageId,
+      });
+      console.log("SCORM API response:", scorm);
 
       updateLesson(uploadModal.moduleId, uploadModal.lessonId, {
         title: uploadModal.title,
@@ -540,6 +608,10 @@ const CourseManagement: React.FC = () => {
           scormVersion: scorm.scormVersion,
         },
       });
+
+      if ((activeCourse as any).modulePacingEnabled) {
+        updateCourseField("scormPackageId", scorm.id);
+      }
 
       setUploadModal({ ...uploadModal, isOpen: false, file: null });
       setUploadTrigger(null);
