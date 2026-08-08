@@ -3,13 +3,19 @@ import { getApiV1BaseUrl } from '@/lib/apiConfig';
 
 const BASE_URL = getApiV1BaseUrl();
 
-export type CertificateTheme = 'classic' | 'modern' | 'tech';
+export type CertificateTheme = 'classic' | 'modern' | 'tech' | 'mecure';
 
 export interface CertificateThemeConfig {
   theme: CertificateTheme;
   title: string;
   signatory: string;
   signatoryRole: string;
+  signatory2?: string;
+  signatoryRole2?: string;
+  signatorySignatureBlobUrl?: string;
+  signatorySignatureMimeType?: string;
+  signatory2SignatureBlobUrl?: string;
+  signatory2SignatureMimeType?: string;
   showDate: boolean;
 }
 
@@ -18,6 +24,8 @@ export interface CreateCertificateTemplateResponse {
   id: string;
   filename: string;
   downloadUrl: string;
+  signatorySignatureUrl?: string;
+  signatory2SignatureUrl?: string;
 }
 
 export interface AssignCertificateTemplateToHrPayload {
@@ -79,7 +87,11 @@ function assertLogoFile(file: File) {
 export async function createCertificateTemplate(
   logo: File,
   themeConfig: CertificateThemeConfig,
-  description?: string
+  description?: string,
+  options?: {
+    signatorySignature?: File | null;
+    signatorySignature2?: File | null;
+  }
 ): Promise<CreateCertificateTemplateResponse> {
   assertLogoFile(logo);
 
@@ -88,6 +100,14 @@ export async function createCertificateTemplate(
   formData.append('themeConfig', JSON.stringify(themeConfig));
   if (description) {
     formData.append('description', description);
+  }
+  if (options?.signatorySignature) {
+    assertLogoFile(options.signatorySignature);
+    formData.append('signatorySignature', options.signatorySignature);
+  }
+  if (options?.signatorySignature2) {
+    assertLogoFile(options.signatorySignature2);
+    formData.append('signatorySignature2', options.signatorySignature2);
   }
 
   const res = await fetch(`${BASE_URL}/certificates`, {

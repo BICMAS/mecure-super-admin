@@ -43,6 +43,12 @@ const THEME_OPTIONS: Array<{
     label: "Tech",
     description: "Structured header band, monospace accents, minimal geometry",
   },
+  {
+    id: "mecure",
+    label: "MeCure",
+    description:
+      "MeCure brand green accents, gold headers, script learner name, bottom-center logo",
+  },
 ];
 
 const Rewards: React.FC = () => {
@@ -58,12 +64,16 @@ const Rewards: React.FC = () => {
     title: string;
     signatory: string;
     signatoryRole: string;
+    signatory2: string;
+    signatoryRole2: string;
     showDate: boolean;
   }>({
-    theme: "classic",
+    theme: "mecure",
     title: "Certificate of Completion",
-    signatory: "Dr. John Smith",
-    signatoryRole: "Director of Education",
+    signatory: "Daigo Bekzat",
+    signatoryRole: "Director",
+    signatory2: "Fadi Indiana",
+    signatoryRole2: "Director",
     showDate: true,
   });
 
@@ -72,6 +82,12 @@ const Rewards: React.FC = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [savedLogoUrl, setSavedLogoUrl] = useState<string | null>(null);
+  const [signature1File, setSignature1File] = useState<File | null>(null);
+  const [signature1PreviewUrl, setSignature1PreviewUrl] = useState<string | null>(null);
+  const [savedSignature1Url, setSavedSignature1Url] = useState<string | null>(null);
+  const [signature2File, setSignature2File] = useState<File | null>(null);
+  const [signature2PreviewUrl, setSignature2PreviewUrl] = useState<string | null>(null);
+  const [savedSignature2Url, setSavedSignature2Url] = useState<string | null>(null);
   const [templateDescription, setTemplateDescription] = useState("");
   const previewRef = useRef<HTMLDivElement>(null);
   const [templateId, setTemplateId] = useState("");
@@ -85,6 +101,8 @@ const Rewards: React.FC = () => {
   const [assignSuccess, setAssignSuccess] = useState<string | null>(null);
 
   const activeLogoUrl = logoPreviewUrl || savedLogoUrl;
+  const activeSignature1Url = signature1PreviewUrl || savedSignature1Url;
+  const activeSignature2Url = signature2PreviewUrl || savedSignature2Url;
 
   /* =====================
      Coins State (unchanged)
@@ -145,6 +163,34 @@ const Rewards: React.FC = () => {
   }, [logoFile]);
 
   useEffect(() => {
+    if (!signature1File) {
+      setSignature1PreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(signature1File);
+    setSignature1PreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [signature1File]);
+
+  useEffect(() => {
+    if (!signature2File) {
+      setSignature2PreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(signature2File);
+    setSignature2PreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [signature2File]);
+
+  useEffect(() => {
     const loadEconomy = async () => {
       setEconomyLoading(true);
       setEconomyError(null);
@@ -199,9 +245,19 @@ const Rewards: React.FC = () => {
         logoFile,
         certConfig,
         templateDescription || undefined,
+        {
+          signatorySignature: signature1File,
+          signatorySignature2: signature2File,
+        },
       );
       setSavedLogoUrl(json.url);
       setTemplateId(json.id);
+      if (json.signatorySignatureUrl) {
+        setSavedSignature1Url(json.signatorySignatureUrl);
+      }
+      if (json.signatory2SignatureUrl) {
+        setSavedSignature2Url(json.signatory2SignatureUrl);
+      }
     } catch (err) {
       console.error(err);
       setCertError(
@@ -272,10 +328,135 @@ const Rewards: React.FC = () => {
     setCertError(null);
   };
 
+  const handleSignature1Change = (file: File | null) => {
+    setSignature1File(file);
+    setCertError(null);
+  };
+
+  const handleSignature2Change = (file: File | null) => {
+    setSignature2File(file);
+    setCertError(null);
+  };
+
   const renderCertificatePreview = () => {
     const isClassic = certConfig.theme === "classic";
     const isModern = certConfig.theme === "modern";
     const isTech = certConfig.theme === "tech";
+    const isMecure = certConfig.theme === "mecure";
+
+    if (isMecure) {
+      return (
+        <div
+          ref={previewRef}
+          id="certificate-preview"
+          className="bg-white w-[760px] min-h-[540px] shrink-0 shadow-2xl relative flex flex-col items-center text-center px-12 py-10 font-sans overflow-hidden"
+        >
+          <div
+            className="absolute top-0 left-0 w-0 h-0 border-t-[88px] border-r-[88px] border-t-brand-accent border-r-transparent pointer-events-none"
+            aria-hidden
+          />
+          <div
+            className="absolute top-0 right-0 w-0 h-0 border-t-[88px] border-l-[88px] border-t-brand-accent border-l-transparent pointer-events-none"
+            aria-hidden
+          />
+
+          <div className="relative z-10 w-full flex-1 flex flex-col items-center pt-2 pb-28">
+            <h1
+              className="text-[2.75rem] font-bold tracking-[0.08em] text-[#C9A227] leading-none"
+              style={{ fontFamily: "Montserrat, sans-serif" }}
+            >
+              CERTIFICATE
+            </h1>
+            <p
+              className="text-sm font-bold uppercase tracking-[0.35em] text-brand-grey mt-2"
+              style={{ fontFamily: "Montserrat, sans-serif" }}
+            >
+              OF COMPLETION
+            </p>
+
+            <p className="text-sm text-brand-grey mt-10">
+              This is to certify that
+            </p>
+            <p
+              className="text-4xl text-[#C9A227] mt-4 px-4"
+              style={{ fontFamily: '"Great Vibes", cursive' }}
+            >
+              Macdara Rashawn
+            </p>
+            <p className="text-sm text-brand-grey mt-5">
+              Has successfully completed the
+            </p>
+            <p className="text-base font-bold text-brand-grey mt-2 uppercase tracking-wide max-w-[85%]">
+              2030 Online Course Developer
+            </p>
+
+            {certConfig.showDate && (
+              <p className="text-sm text-brand-grey mt-6">
+                {new Date().toLocaleDateString("en-GB", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            )}
+
+            <div className="w-full flex justify-between items-end mt-auto px-6 pt-8">
+              <div className="text-center w-[42%]">
+                {activeSignature1Url ? (
+                  <img
+                    src={activeSignature1Url}
+                    alt="Left signatory signature"
+                    className="mx-auto max-h-10 max-w-[140px] object-contain mb-1"
+                  />
+                ) : null}
+                <div className="w-full border-t border-brand-grey/60 mb-2" />
+                <p className="text-sm font-semibold text-brand-grey">
+                  {certConfig.signatory || "Signatory Name"}
+                </p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mt-1">
+                  {certConfig.signatoryRole || "Role"}
+                </p>
+              </div>
+
+              <div className="text-center w-[42%]">
+                {activeSignature2Url ? (
+                  <img
+                    src={activeSignature2Url}
+                    alt="Right signatory signature"
+                    className="mx-auto max-h-10 max-w-[140px] object-contain mb-1"
+                  />
+                ) : null}
+                <div className="w-full border-t border-brand-grey/60 mb-2" />
+                <p className="text-sm font-semibold text-brand-grey">
+                  {certConfig.signatory2 || "Signatory Name"}
+                </p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mt-1">
+                  {certConfig.signatoryRole2 || "Role"}
+                </p>
+              </div>
+            </div>
+
+            <div className="absolute bottom-[34px] left-1/2 -translate-x-1/2 z-20">
+              {activeLogoUrl ? (
+                <img
+                  src={activeLogoUrl}
+                  alt="MeCure Industries logo"
+                  className="max-h-16 max-w-[160px] object-contain"
+                />
+              ) : (
+                <div className="flex h-14 w-40 items-center justify-center rounded border border-dashed border-gray-300 bg-white/90 text-[10px] text-gray-400">
+                  MeCure logo
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 h-[6px] bg-brand-accent-dark pointer-events-none" />
+          <div className="absolute bottom-[6px] left-0 right-0 h-[22px] bg-brand-accent pointer-events-none" />
+        </div>
+      );
+    }
 
     return (
       <div
@@ -524,29 +705,99 @@ const Rewards: React.FC = () => {
               </div>
 
               {/* Inputs */}
-              {(
-                [
-                  ["Headline Text", "title"],
-                  ["Signatory Name", "signatory"],
-                  ["Signatory Role", "signatoryRole"],
-                ] as const
-              ).map(([label, key]) => (
-                <div key={key}>
-                  <label className="text-sm font-medium mb-1 block">
-                    {label}
-                  </label>
-                  <input
-                    value={certConfig[key]}
-                    onChange={(e) =>
-                      setCertConfig({
-                        ...certConfig,
-                        [key]: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  />
-                </div>
-              ))}
+              {certConfig.theme !== "mecure" &&
+                (
+                  [
+                    ["Headline Text", "title"],
+                    ["Signatory Name", "signatory"],
+                    ["Signatory Role", "signatoryRole"],
+                  ] as const
+                ).map(([label, key]) => (
+                  <div key={key}>
+                    <label className="text-sm font-medium mb-1 block">
+                      {label}
+                    </label>
+                    <input
+                      value={certConfig[key]}
+                      onChange={(e) =>
+                        setCertConfig({
+                          ...certConfig,
+                          [key]: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg text-sm"
+                    />
+                  </div>
+                ))}
+
+              {certConfig.theme === "mecure" && (
+                <>
+                  <div className="rounded-lg border border-brand-accent/30 bg-brand-accent/5 px-3 py-2 text-xs text-gray-600">
+                    MeCure theme uses a fixed &quot;CERTIFICATE / OF COMPLETION&quot;
+                    header and places your uploaded logo at the bottom center.
+                  </div>
+                  {(
+                    [
+                      ["Signatory Name (Left)", "signatory"],
+                      ["Signatory Role (Left)", "signatoryRole"],
+                      ["Signatory Name (Right)", "signatory2"],
+                      ["Signatory Role (Right)", "signatoryRole2"],
+                    ] as const
+                  ).map(([label, key]) => (
+                    <div key={key}>
+                      <label className="text-sm font-medium mb-1 block">
+                        {label}
+                      </label>
+                      <input
+                        value={certConfig[key]}
+                        onChange={(e) =>
+                          setCertConfig({
+                            ...certConfig,
+                            [key]: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 border rounded-lg text-sm"
+                      />
+                    </div>
+                  ))}
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">
+                      Signature Image (Left)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp"
+                      onChange={(e) =>
+                        handleSignature1Change(e.target.files?.[0] ?? null)
+                      }
+                      className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
+                    />
+                    {signature1File && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Selected: {signature1File.name}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">
+                      Signature Image (Right)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp"
+                      onChange={(e) =>
+                        handleSignature2Change(e.target.files?.[0] ?? null)
+                      }
+                      className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
+                    />
+                    {signature2File && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Selected: {signature2File.name}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="text-sm font-medium mb-1 block">
