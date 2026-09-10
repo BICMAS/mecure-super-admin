@@ -123,6 +123,32 @@ export async function createCertificateTemplate(
   return res.json();
 }
 
+export async function listCertificateTemplates(): Promise<
+  Array<{
+    id: string;
+    filename: string;
+    description?: string | null;
+    createdAt?: string;
+  }>
+> {
+  const res = await fetch(`${BASE_URL}/certificates`, {
+    method: 'GET',
+    headers: authHeader(),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readError(res, 'Failed to load certificate templates'));
+  }
+
+  const data = await res.json();
+  return (Array.isArray(data) ? data : data.data ?? []) as Array<{
+    id: string;
+    filename: string;
+    description?: string | null;
+    createdAt?: string;
+  }>;
+}
+
 export async function assignCertificateTemplateToHr(
   payload: AssignCertificateTemplateToHrPayload
 ): Promise<AssignCertificateTemplateToHrResponse> {

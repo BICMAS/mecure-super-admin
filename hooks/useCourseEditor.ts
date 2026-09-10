@@ -20,8 +20,7 @@ export function useCourseEditor() {
     key: K,
     value: Course[K]
   ) => {
-    if (!activeCourse) return;
-    setActiveCourse({ ...activeCourse, [key]: value });
+    setActiveCourse((prev) => (prev ? { ...prev, [key]: value } : prev));
   };
 
   return {

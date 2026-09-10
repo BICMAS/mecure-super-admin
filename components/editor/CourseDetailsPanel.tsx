@@ -7,6 +7,8 @@ import {
 import { Course } from '@/types';
 import { generateCourseTags } from '@/services/geminiService';
 import { useState } from 'react';
+import CourseCategorySelect from './CourseCategorySelect';
+import CourseCertificateTemplateSelect from './CourseCertificateTemplateSelect';
 
 interface Props {
   course: Course;
@@ -62,6 +64,45 @@ const CourseDetailsPanel: React.FC<Props> = ({ course, onUpdate }) => {
               placeholder="Brief summary of the course..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary outline-none h-32 text-sm resize-none"
             />
+          </div>
+
+          <CourseCategorySelect
+            categoryId={course.categoryId ?? course.category?.id ?? null}
+            onChange={(categoryId, category) => {
+              onUpdate('categoryId', categoryId);
+              onUpdate('category', category);
+            }}
+          />
+
+          <CourseCertificateTemplateSelect
+            templateId={
+              course.certificateTemplateId ?? course.certificateTemplate?.id ?? null
+            }
+            onChange={(certificateTemplateId, certificateTemplate) => {
+              onUpdate('certificateTemplateId', certificateTemplateId);
+              onUpdate('certificateTemplate', certificateTemplate);
+            }}
+          />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Duration (minutes)
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={10080}
+              value={course.durationEstimate ?? ''}
+              onChange={(e) => {
+                const raw = e.target.value;
+                onUpdate('durationEstimate', raw === '' ? null : Number(raw));
+              }}
+              placeholder="e.g. 45"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary outline-none"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Optional estimated length shown on trainee course cards.
+            </p>
           </div>
 
           {/* Version & Visibility */}

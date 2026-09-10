@@ -23,11 +23,16 @@ import {
   Play,
   Maximize,
   ChevronRight,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import { Course, Module, Lesson } from "../../types";
 import { generateCourseTags } from "../../services/geminiService";
 import { authFetch } from "../../services/authFetch";
 import { getApiV1BaseUrl } from "@/lib/apiConfig";
+import { lockCourse, unlockCourse } from "@/services/courseApi";
+import CourseCategorySelect from "../editor/CourseCategorySelect";
+import CourseCertificateTemplateSelect from "../editor/CourseCertificateTemplateSelect";
 
 const API_BASE = getApiV1BaseUrl();
 
@@ -92,6 +97,8 @@ const CourseManagement: React.FC = () => {
     isOpen: false,
     courseId: null,
   });
+  const [lockConfirmCourse, setLockConfirmCourse] = useState<Course | null>(null);
+  const [lockingCourseId, setLockingCourseId] = useState<string | null>(null);
 
   const normalizeCourseData = (course: Course): Course => ({
     ...course,
@@ -134,6 +141,15 @@ const CourseManagement: React.FC = () => {
     modulePacingDays: (course as any).modulePacingDays ?? 7,
     pacingStartDate: (course as any).pacingStartDate ?? null,
     scormPackageId: (course as any).scormPackageId ?? null,
+    categoryId: course.categoryId ?? course.category?.id ?? null,
+    category: course.category ?? null,
+    certificateTemplateId:
+      course.certificateTemplateId ?? course.certificateTemplate?.id ?? null,
+    certificateTemplate: course.certificateTemplate ?? null,
+    isLocked: Boolean(course.isLocked),
+    lockedAt: course.lockedAt ?? null,
+    lockedBy: course.lockedBy ?? null,
+    durationEstimate: course.durationEstimate ?? null,
   });
 
   const fetchCourses = async () => {
@@ -302,6 +318,9 @@ const CourseManagement: React.FC = () => {
       modulePacingDays: (course as any).modulePacingDays ?? 7,
       pacingStartDate: (course as any).pacingStartDate ?? null,
       scormPackageId: (course as any).scormPackageId ?? null,
+      categoryId: course.categoryId ?? null,
+      certificateTemplateId: course.certificateTemplateId ?? null,
+      durationEstimate: course.durationEstimate ?? null,
       modules: (course.modules ?? []).map((module, index) => ({
         id: module.id,
         name: module.name || "Untitled Module",
@@ -398,6 +417,44 @@ const CourseManagement: React.FC = () => {
     } catch (err) {
       console.error(err);
       alert((err as Error).message);
+    }
+  };
+
+  const applyCourseLockState = (updated: Course) => {
+    const normalized = normalizeCourseData(updated);
+    setCourses((prev) =>
+      prev.map((course) => (course.id === normalized.id ? { ...course, ...normalized } : course)),
+    );
+    setActiveCourse((prev) =>
+      prev && prev.id === normalized.id ? { ...prev, ...normalized } : prev,
+    );
+  };
+
+  const handleUnlockCourse = async (courseId: string) => {
+    try {
+      setLockingCourseId(courseId);
+      const updated = await unlockCourse(courseId);
+      applyCourseLockState(updated);
+    } catch (err) {
+      console.error(err);
+      alert((err as Error).message);
+    } finally {
+      setLockingCourseId(null);
+    }
+  };
+
+  const handleConfirmLockCourse = async () => {
+    if (!lockConfirmCourse) return;
+    try {
+      setLockingCourseId(lockConfirmCourse.id);
+      const updated = await lockCourse(lockConfirmCourse.id);
+      applyCourseLockState(updated);
+      setLockConfirmCourse(null);
+    } catch (err) {
+      console.error(err);
+      alert((err as Error).message);
+    } finally {
+      setLockingCourseId(null);
     }
   };
 
@@ -700,6 +757,65 @@ const CourseManagement: React.FC = () => {
 
   // --- RENDERERS ---
 
+  const lockConfirmDialog = lockConfirmCourse ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+        <div className="p-5 border-b">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <Lock className="w-5 h-5 text-amber-600" />
+            Lock this course?
+          </h2>
+          <p className="text-sm text-slate-600 mt-2">
+            Learners will still see <strong>{lockConfirmCourse.title}</strong>, but
+            they will not be able to start, continue, or claim a new certificate.
+            Existing progress is kept.
+          </p>
+        </div>
+        <div className="flex gap-3 p-5 bg-slate-50 rounded-b-xl">
+          <button
+            type="button"
+            onClick={() => setLockConfirmCourse(null)}
+            disabled={lockingCourseId === lockConfirmCourse.id}
+            className="flex-1 py-2.5 border rounded-lg font-medium hover:bg-white disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirmLockCourse}
+            disabled={lockingCourseId === lockConfirmCourse.id}
+            className="flex-1 py-2.5 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 disabled:bg-slate-300"
+          >
+            {lockingCourseId === lockConfirmCourse.id ? "Locking…" : "Lock course"}
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  const renderLockActions = (course: Course) =>
+    course.isLocked ? (
+      <button
+        type="button"
+        onClick={() => handleUnlockCourse(course.id)}
+        disabled={lockingCourseId === course.id}
+        className="px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 disabled:opacity-50"
+        title="Unlock Course"
+      >
+        Unlock
+      </button>
+    ) : (
+      <button
+        type="button"
+        onClick={() => setLockConfirmCourse(course)}
+        disabled={lockingCourseId === course.id}
+        className="px-3 py-1.5 text-sm font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50"
+        title="Lock Course"
+      >
+        Lock
+      </button>
+    );
+
   if (viewMode === "VIEW" && activeCourse) {
     return (
       <div className="space-y-6 animate-fade-in pb-20">
@@ -750,8 +866,15 @@ const CourseManagement: React.FC = () => {
                 v{activeCourse.version} • {activeCourse.visibility}
               </p>
             </div>
+            {activeCourse.isLocked && (
+              <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-800 text-white">
+                Locked
+              </span>
+            )}
           </div>
+          {renderLockActions(activeCourse)}
         </div>
+        {lockConfirmDialog}
 
         {/* ===== METADATA ===== */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -979,10 +1102,16 @@ const CourseManagement: React.FC = () => {
                   {activeCourse.status}
                 </span>
                 <span>v{activeCourse.version}</span>
+                {activeCourse.isLocked && (
+                  <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-slate-800 text-white">
+                    Locked
+                  </span>
+                )}
               </div>
             </div>
           </div>
           <div className="flex gap-3">
+            {renderLockActions(activeCourse)}
             <button
               onClick={handlePublishCourse}
               className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -991,6 +1120,7 @@ const CourseManagement: React.FC = () => {
             </button>
           </div>
         </div>
+        {lockConfirmDialog}
 
         <div className="grid grid-cols-12 gap-8">
           {/* Left: Configuration */}
@@ -1027,6 +1157,32 @@ const CourseManagement: React.FC = () => {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary outline-none h-32 text-sm resize-none"
                   />
                 </div>
+
+                <CourseCategorySelect
+                  categoryId={activeCourse.categoryId ?? activeCourse.category?.id ?? null}
+                  onChange={(categoryId, category) => {
+                    setActiveCourse({
+                      ...activeCourse,
+                      categoryId,
+                      category,
+                    });
+                  }}
+                />
+
+                <CourseCertificateTemplateSelect
+                  templateId={
+                    activeCourse.certificateTemplateId ??
+                    activeCourse.certificateTemplate?.id ??
+                    null
+                  }
+                  onChange={(certificateTemplateId, certificateTemplate) => {
+                    setActiveCourse({
+                      ...activeCourse,
+                      certificateTemplateId,
+                      certificateTemplate,
+                    });
+                  }}
+                />
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1502,6 +1658,8 @@ const CourseManagement: React.FC = () => {
         </div>
       )}
 
+      {lockConfirmDialog}
+
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">
@@ -1594,6 +1752,11 @@ const CourseManagement: React.FC = () => {
                         <span className="font-medium text-gray-900 block">
                           {course.title}
                         </span>
+                        {course.category?.name && (
+                          <span className="text-xs text-gray-500">
+                            {course.category.name}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -1642,9 +1805,35 @@ const CourseManagement: React.FC = () => {
                     >
                       {course.status.toUpperCase()}
                     </span>
+                    {course.isLocked && (
+                      <span className="ml-2 px-2.5 py-1 text-xs font-bold rounded-full bg-slate-800 text-white inline-block">
+                        Locked
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      {course.isLocked ? (
+                        <button
+                          type="button"
+                          onClick={() => handleUnlockCourse(course.id)}
+                          disabled={lockingCourseId === course.id}
+                          className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded transition-colors disabled:opacity-50"
+                          title="Unlock Course"
+                        >
+                          <Unlock size={16} />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setLockConfirmCourse(course)}
+                          disabled={lockingCourseId === course.id}
+                          className="p-1.5 text-amber-700 hover:bg-amber-50 rounded transition-colors disabled:opacity-50"
+                          title="Lock Course"
+                        >
+                          <Lock size={16} />
+                        </button>
+                      )}
                       <button
                         onClick={() => handleViewCourse(course.id)}
                         className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"

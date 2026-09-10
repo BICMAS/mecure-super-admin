@@ -49,6 +49,12 @@ export interface Module {
   lessons: Lesson[];
 }
 
+export interface CourseCategory {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface Course {
   id: string;
   title: string;
@@ -68,6 +74,19 @@ export interface Course {
   modulePacingDays?: number;
   pacingStartDate?: string | null;
   scormPackageId?: string | null;
+  categoryId?: string | null;
+  category?: CourseCategory | null;
+  certificateTemplateId?: string | null;
+  certificateTemplate?: {
+    id: string;
+    filename?: string;
+    name?: string;
+    description?: string | null;
+  } | null;
+  isLocked?: boolean;
+  lockedAt?: string | null;
+  lockedBy?: string | null;
+  durationEstimate?: number | null;
 }
 
 // draftTypes.ts
