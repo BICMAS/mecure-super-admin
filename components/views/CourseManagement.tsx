@@ -1679,8 +1679,8 @@ const CourseManagement: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <table className="w-full text-left">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+        <table className="w-full text-left border-separate border-spacing-0">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">
@@ -1703,7 +1703,7 @@ const CourseManagement: React.FC = () => {
               <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">
                 Status
               </th>
-              <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase text-right">
+              <th className="px-4 py-4 text-xs font-semibold text-gray-500 uppercase text-right sticky right-0 bg-gray-50 z-10 whitespace-nowrap shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">
                 Actions
               </th>
             </tr>
@@ -1741,7 +1741,7 @@ const CourseManagement: React.FC = () => {
               courses.map((course) => (
                 <tr
                   key={course.id}
-                  className="hover:bg-gray-50 transition-colors"
+                  className="group hover:bg-gray-50 transition-colors"
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -1811,8 +1811,8 @@ const CourseManagement: React.FC = () => {
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-4 py-4 text-right sticky right-0 bg-white group-hover:bg-gray-50 z-10 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">
+                    <div className="flex items-center justify-end gap-2 whitespace-nowrap">
                       {course.isLocked ? (
                         <button
                           type="button"
