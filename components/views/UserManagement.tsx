@@ -19,7 +19,7 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { User, UserRole } from "../../types";
-import { createUser, updateUser, bulkUploadUsers, getUsers, blockUser, unblockUser, deleteUser } from "@/api/users";
+import { createUser, updateUser, bulkUploadUsers, getUsers, blockUser, unblockUser, deleteUser, listOrganizations, OrganizationOption } from "@/api/users";
 
 function formatDepartment(value: unknown): string {
   if (!value) return "—";
@@ -84,6 +84,7 @@ const UserManagement: React.FC = () => {
   });
 
   // Form State
+  const [organizations, setOrganizations] = useState<OrganizationOption[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -92,6 +93,7 @@ const UserManagement: React.FC = () => {
     role: "LEARNER",
     department: "",
     designation: "",
+    orgId: "",
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -131,6 +133,9 @@ const UserManagement: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
+    listOrganizations()
+      .then(setOrganizations)
+      .catch(() => setOrganizations([]));
   }, []);
 
 const fetchUsers = async () => {
@@ -160,6 +165,7 @@ const fetchUsers = async () => {
       role: "LEARNER",
       department: "",
       designation: "",
+      orgId: "",
     });
     setIsModalOpen(true);
   };
@@ -174,6 +180,7 @@ const fetchUsers = async () => {
       role: user.role,
       department: user.department === "—" ? "" : user.department,
       designation: user.designation || "",
+      orgId: "",
     });
     setIsModalOpen(true);
   };
@@ -249,6 +256,7 @@ const fetchUsers = async () => {
           department: formData.department.trim().toUpperCase(),
           phoneNumber: hasPhone ? formData.phoneNumber.trim() : null,
           designation,
+          orgId: formData.role === "HR_MANAGER" && formData.orgId ? formData.orgId : null,
         });
       }
 
@@ -731,6 +739,36 @@ const fetchUsers = async () => {
                   />
                 </div>
               </div>
+
+              {!editingUser && formData.role === "HR_MANAGER" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Organization
+                  </label>
+                  <select
+                    value={formData.orgId}
+                    onChange={(e) =>
+                      setFormData({ ...formData, orgId: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary outline-none bg-white"
+                  >
+                    <option value="">New organization</option>
+                    {organizations.map((org) => {
+                      const hints = (org.users ?? [])
+                        .map((user) => user.email || user.fullName)
+                        .filter(Boolean);
+                      return (
+                        <option key={org.id} value={org.id}>
+                          {hints.length ? `${org.name} (${hints.join(", ")})` : org.name}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Choose an existing organization to share it. Leave this blank to create a new one.
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

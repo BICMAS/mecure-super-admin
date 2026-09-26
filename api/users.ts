@@ -14,6 +14,23 @@ function authHeaders() {
 }
 
 
+export interface OrganizationOption {
+    id: string;
+    name: string;
+    users?: Array<{ fullName: string; email: string | null }>;
+}
+
+export async function listOrganizations(): Promise<OrganizationOption[]> {
+    const res = await fetch(`${BASE_URL}/users/organizations`, {
+        headers: authHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+        throw new Error(data.error || data.message || 'Failed to load organizations');
+    }
+    return data;
+}
+
 export async function createUser(payload: {
     fullName: string;
     email?: string | null;
@@ -22,6 +39,7 @@ export async function createUser(payload: {
     userRole: string;
     department: string;
     designation?: string | null;
+    orgId?: string | null;
 }): Promise<User> {
     const res = await fetch(`${BASE_URL}/users/`, {
         method: 'POST',
